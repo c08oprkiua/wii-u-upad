@@ -1,5 +1,15 @@
 #include "upad.h"
 
+struct KPAD_pointers {
+    uint32_t *core_buttons;
+    union buttons_for {
+        uint32_t *nunchuck;
+        uint32_t *classic;
+        uint32_t *pro;
+    } buttons_for;
+    WPADExtensionType *ext;
+};
+
 UPAD::UPAD(){
     /*
     WPADInit();
@@ -16,24 +26,33 @@ UPAD::~UPAD(){
     */
 };
 
-void UPAD::VPADtoUPAD(VPADChan chanl){
-    VPADStatus drc[1];
-    VPADReadError err[1];
-    VPADRead(chanl, drc, 1, err);
-    if (err[1] != VPAD_READ_SUCCESS){
-        return;
-    }
+void UPAD::read(){
+    trigger = 0;
+    hold = 0;
+    release = 0;
+    VPADtoUPAD(VPAD_CHAN_0);
+    VPADtoUPAD(VPAD_CHAN_1);
+    KPADtoUPAD(WPAD_CHAN_0);
+    KPADtoUPAD(WPAD_CHAN_1);
+    KPADtoUPAD(WPAD_CHAN_2);
+    KPADtoUPAD(WPAD_CHAN_3);
+
 }
 
-struct KPAD_pointers {
-    uint32_t *core_buttons;
-    union buttons_for {
-        uint32_t *nunchuck;
-        uint32_t *classic;
-        uint32_t *pro;
-    } buttons_for;
-    WPADExtensionType *ext;
-};
+void UPAD::VPADtoUPAD(VPADChan chanl){
+    VPADStatus drc;
+    VPADReadError err;
+    VPADRead(chanl, &drc, 1, &err);
+    if (err != VPAD_READ_SUCCESS){
+        return;
+    }
+    trigger = trigger | VPAD_internal_read(drc.trigger);
+    hold = hold | VPAD_internal_read(drc.hold);
+    release = release | VPAD_internal_read(drc.release);
+
+}
+
+
 
 void UPAD::KPADtoUPAD(KPADChan chanl){
     KPADStatus wiimote;
@@ -47,17 +66,81 @@ void UPAD::KPADtoUPAD(KPADChan chanl){
     Not quite sure if this is how it should be done, since the union means this data is 
     being copied several times ig?
     */
-    //Trigger
+    //trigger
     pointers.core_buttons = &wiimote.trigger;
     pointers.buttons_for.nunchuck = &wiimote.nunchuck.trigger;
     pointers.buttons_for.classic = &wiimote.classic.trigger;
     pointers.buttons_for.pro = &wiimote.pro.trigger;
     trigger = KPAD_internal_read(&pointers);
+    //hold
+    pointers.core_buttons = &wiimote.hold;
+    pointers.buttons_for.nunchuck = &wiimote.nunchuck.hold;
+    pointers.buttons_for.classic = &wiimote.classic.hold;
+    pointers.buttons_for.pro = &wiimote.pro.hold;
+    hold = KPAD_internal_read(&pointers);
+    //release
+    pointers.core_buttons = &wiimote.release;
+    pointers.buttons_for.nunchuck = &wiimote.nunchuck.release;
+    pointers.buttons_for.classic = &wiimote.classic.release;
+    pointers.buttons_for.pro = &wiimote.pro.release;
+    release = KPAD_internal_read(&pointers);
+}
+
+uint32_t VPAD_internal_read(uint32_t &in_buttons){
+    uint32_t output;
+    if (in_buttons & VPAD_BUTTON_A){
+        output = output | UPAD_BUTTON_A;
+    }
+    if (in_buttons & VPAD_BUTTON_HOME){
+        output = output | UPAD_BUTTON_HOME;
+    }
+    if (in_buttons & VPAD_BUTTON_A)
+    {
+        output = output | UPAD_BUTTON_A;
+    }
+    if (in_buttons & VPAD_BUTTON_B)
+    {
+        output = output | UPAD_BUTTON_B;
+    }
+    if (in_buttons & VPAD_BUTTON_X)
+    {
+        output = output | UPAD_BUTTON_X;
+    }
+    if (in_buttons & VPAD_BUTTON_Y)
+    {
+        output = output | UPAD_BUTTON_Y;
+    }
+    if (in_buttons & VPAD_BUTTON_PLUS)
+    {
+        output = output | UPAD_BUTTON_PLUS;
+    }
+    if (in_buttons & VPAD_BUTTON_MINUS)
+    {
+        output = output | UPAD_BUTTON_MINUS;
+    }
+    if (in_buttons & (VPAD_BUTTON_UP | VPAD_STICK_L_EMULATION_UP))
+    {
+        output = output | UPAD_BUTTON_UP;
+    }
+    if (in_buttons & (VPAD_BUTTON_DOWN | VPAD_STICK_L_EMULATION_DOWN))
+    {
+        output = output | UPAD_BUTTON_DOWN;
+    }
+    if (in_buttons & (VPAD_BUTTON_LEFT | VPAD_STICK_L_EMULATION_LEFT))
+    {
+        output = output | UPAD_BUTTON_LEFT;
+    }
+    if (in_buttons & (VPAD_BUTTON_RIGHT | VPAD_STICK_L_EMULATION_RIGHT))
+    {
+        output = output | UPAD_BUTTON_RIGHT;
+    }
+    return output;
 }
 
 uint32_t KPAD_internal_read(KPAD_pointers* ptrs){
     uint32_t output, buttons_pressed;
-    //This gets verbose, sorry
+    //This gets verbose with the if statements, sorry.
+    //I'll slim down these down into some sort of for loop once I learn how to in C++
 
     //Shared mappings between Wiimote and Wiimote + Nunchuck
     if (*ptrs->ext == WPAD_EXT_CORE || 
@@ -163,7 +246,7 @@ uint32_t KPAD_internal_read(KPAD_pointers* ptrs){
             output = output | UPAD_BUTTON_RIGHT;
         }
     }
-
+    //Pro controller mappings
     else if (*ptrs->ext == WPAD_EXT_PRO_CONTROLLER){
         buttons_pressed = *ptrs->buttons_for.pro;
         if (buttons_pressed & WPAD_PRO_BUTTON_HOME){
