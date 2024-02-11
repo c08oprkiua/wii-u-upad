@@ -13,6 +13,10 @@ enum UPADButtons {
     UPAD_BUTTON_A = 1 << 0,
     //B button on a controller.
     UPAD_BUTTON_B = 1 << 1,
+    //X button on a controller. Also mapped to 1 on standalone Wiimote.
+    UPAD_BUTTON_X = 1 << 2,
+    //Y button on a controller. Also mapped to 2 on standalone Wiimote.
+    UPAD_BUTTON_Y = 1 << 3,
     //D-pad left on a controller.
     UPAD_BUTTON_LEFT = 1 << 4,
     //D-pad right on a controller. Will also count for any virtual d-pad for a thumbstick.
@@ -34,7 +38,7 @@ class UPAD {
 private:
 
     void VPADtoUPAD(VPADChan chanl);
-    void KPADtoUPAD(KPADChan chanl);
+    void KPADtoUPAD(KPADChan chanl);    
 
 public:
     UPADError error;
@@ -44,10 +48,10 @@ public:
     uint32_t release;
 
     /**
-     * @brief Read controller data. Check error for errors. 
+     * @brief Read controller data. Check the error variable for errors. 
      * 
      */
-    void Read();
+    void read();
 
     UPAD();
     ~UPAD();
