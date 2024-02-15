@@ -31,7 +31,6 @@ enum UPADButtons {
     UPAD_BUTTON_MINUS = 1 << 9,
     //Home button on a controller. Maps to Xbox, Playstation, etc. buttons on relevant controllers.
     UPAD_BUTTON_HOME = 1 << 10,
-
 };
 
 class UPAD {
@@ -41,6 +40,11 @@ private:
     void KPADtoUPAD(KPADChan chanl);    
 
 public:
+    /**
+     * @brief The error(s) encountered by UPAD, if any. 
+     * 
+     * Resets if and when read() is called again.
+     */
     UPADError error;
     
     uint32_t hold;
@@ -57,10 +61,3 @@ public:
     ~UPAD();
 
 };
-
-/*
-Note to self: General process should go something like
->See what's connected to the console
->Read inputs
->Translate to UPAD
-*/

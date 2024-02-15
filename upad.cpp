@@ -27,16 +27,16 @@ UPAD::~UPAD(){
 };
 
 void UPAD::read(){
+    error = UPAD_READ_SUCCESS;
     trigger = 0;
     hold = 0;
     release = 0;
     VPADtoUPAD(VPAD_CHAN_0);
     VPADtoUPAD(VPAD_CHAN_1);
-    KPADtoUPAD(WPAD_CHAN_0);
-    KPADtoUPAD(WPAD_CHAN_1);
-    KPADtoUPAD(WPAD_CHAN_2);
-    KPADtoUPAD(WPAD_CHAN_3);
-
+    uint8_t kpad_iterate = 0;
+    for (kpad_iterate = 0; kpad_iterate < 4; kpad_iterate++){
+        KPADtoUPAD((KPADChan) kpad_iterate);
+    }
 }
 
 void UPAD::VPADtoUPAD(VPADChan chanl){
@@ -46,9 +46,9 @@ void UPAD::VPADtoUPAD(VPADChan chanl){
     if (err != VPAD_READ_SUCCESS){
         return;
     }
-    trigger = trigger | VPAD_internal_read(drc.trigger);
-    hold = hold | VPAD_internal_read(drc.hold);
-    release = release | VPAD_internal_read(drc.release);
+    trigger |= VPAD_internal_read(drc.trigger);
+    hold |= VPAD_internal_read(drc.hold);
+    release |= VPAD_internal_read(drc.release);
 
 }
 
@@ -89,50 +89,50 @@ void UPAD::KPADtoUPAD(KPADChan chanl){
 uint32_t VPAD_internal_read(uint32_t &in_buttons){
     uint32_t output;
     if (in_buttons & VPAD_BUTTON_A){
-        output = output | UPAD_BUTTON_A;
+        output |= UPAD_BUTTON_A;
     }
     if (in_buttons & VPAD_BUTTON_HOME){
-        output = output | UPAD_BUTTON_HOME;
+        output |= UPAD_BUTTON_HOME;
     }
     if (in_buttons & VPAD_BUTTON_A)
     {
-        output = output | UPAD_BUTTON_A;
+        output |= UPAD_BUTTON_A;
     }
     if (in_buttons & VPAD_BUTTON_B)
     {
-        output = output | UPAD_BUTTON_B;
+        output |= UPAD_BUTTON_B;
     }
     if (in_buttons & VPAD_BUTTON_X)
     {
-        output = output | UPAD_BUTTON_X;
+        output |= UPAD_BUTTON_X;
     }
     if (in_buttons & VPAD_BUTTON_Y)
     {
-        output = output | UPAD_BUTTON_Y;
+        output |= UPAD_BUTTON_Y;
     }
     if (in_buttons & VPAD_BUTTON_PLUS)
     {
-        output = output | UPAD_BUTTON_PLUS;
+        output |= UPAD_BUTTON_PLUS;
     }
     if (in_buttons & VPAD_BUTTON_MINUS)
     {
-        output = output | UPAD_BUTTON_MINUS;
+        output |= UPAD_BUTTON_MINUS;
     }
     if (in_buttons & (VPAD_BUTTON_UP | VPAD_STICK_L_EMULATION_UP))
     {
-        output = output | UPAD_BUTTON_UP;
+        output |= UPAD_BUTTON_UP;
     }
     if (in_buttons & (VPAD_BUTTON_DOWN | VPAD_STICK_L_EMULATION_DOWN))
     {
-        output = output | UPAD_BUTTON_DOWN;
+        output |= UPAD_BUTTON_DOWN;
     }
     if (in_buttons & (VPAD_BUTTON_LEFT | VPAD_STICK_L_EMULATION_LEFT))
     {
-        output = output | UPAD_BUTTON_LEFT;
+        output |= UPAD_BUTTON_LEFT;
     }
     if (in_buttons & (VPAD_BUTTON_RIGHT | VPAD_STICK_L_EMULATION_RIGHT))
     {
-        output = output | UPAD_BUTTON_RIGHT;
+        output |= UPAD_BUTTON_RIGHT;
     }
     return output;
 }
@@ -150,137 +150,137 @@ uint32_t KPAD_internal_read(KPAD_pointers* ptrs){
     ){
         buttons_pressed = *ptrs->core_buttons;
         if (buttons_pressed & WPAD_BUTTON_HOME){
-            output = output | UPAD_BUTTON_HOME;
+            output |= UPAD_BUTTON_HOME;
         }
         if (buttons_pressed & WPAD_BUTTON_A){
-            output = output | UPAD_BUTTON_A;
+            output |= UPAD_BUTTON_A;
         }
         if (buttons_pressed & WPAD_BUTTON_B){
-            output = output | UPAD_BUTTON_B;
+            output |= UPAD_BUTTON_B;
         }
         if (buttons_pressed & WPAD_BUTTON_PLUS){
-            output = output | UPAD_BUTTON_PLUS;
+            output |= UPAD_BUTTON_PLUS;
         }
         if (buttons_pressed & WPAD_BUTTON_MINUS){
-            output = output | UPAD_BUTTON_MINUS;
+            output |= UPAD_BUTTON_MINUS;
         }
         if (buttons_pressed & WPAD_BUTTON_UP){
-            output = output | UPAD_BUTTON_UP;
+            output |= UPAD_BUTTON_UP;
         }
         if (buttons_pressed & WPAD_BUTTON_DOWN){
-            output = output | UPAD_BUTTON_DOWN;
+            output |= UPAD_BUTTON_DOWN;
         }
         if (buttons_pressed & WPAD_BUTTON_LEFT){
-            output = output | UPAD_BUTTON_LEFT;
+            output |= UPAD_BUTTON_LEFT;
         }
         if (buttons_pressed & WPAD_BUTTON_RIGHT){
-            output = output | UPAD_BUTTON_RIGHT;
+            output |= UPAD_BUTTON_RIGHT;
         }        
 
     }
     //Wiimote standalone unique mappings
     if (*ptrs->ext == WPAD_EXT_CORE || *ptrs->ext == WPAD_EXT_MPLUS){
         if (buttons_pressed & WPAD_BUTTON_1){
-            output = output | UPAD_BUTTON_X;
+            output |= UPAD_BUTTON_X;
         }
         if (buttons_pressed & WPAD_BUTTON_2){
-            output = output | UPAD_BUTTON_Y;
+            output |= UPAD_BUTTON_Y;
         }
     }
     //If it has a nunchuck, since that's an extension of the Wiimote
     else if (*ptrs->ext == WPAD_EXT_NUNCHUK || *ptrs->ext == WPAD_EXT_MPLUS_NUNCHUK){
         buttons_pressed = *ptrs->buttons_for.nunchuck;
         if (buttons_pressed & WPAD_NUNCHUK_BUTTON_C){
-            output = output | UPAD_BUTTON_X;
+            output |= UPAD_BUTTON_X;
         }
         if (buttons_pressed & WPAD_NUNCHUK_BUTTON_Z){
-            output = output | UPAD_BUTTON_Y;
+            output |= UPAD_BUTTON_Y;
         }
         if (buttons_pressed & WPAD_NUNCHUK_STICK_EMULATION_UP){
-            output = output | UPAD_BUTTON_UP;
+            output |= UPAD_BUTTON_UP;
         }
         if (buttons_pressed & WPAD_NUNCHUK_STICK_EMULATION_DOWN){
-            output = output | UPAD_BUTTON_DOWN;
+            output |= UPAD_BUTTON_DOWN;
         }
         if (buttons_pressed & WPAD_NUNCHUK_STICK_EMULATION_LEFT){
-            output = output | UPAD_BUTTON_LEFT;
+            output |= UPAD_BUTTON_LEFT;
         }
         if (buttons_pressed & WPAD_NUNCHUK_STICK_EMULATION_RIGHT){
-            output = output | UPAD_BUTTON_RIGHT;
+            output |= UPAD_BUTTON_RIGHT;
         }
     }
     //This is so that if a classic controller is connected, the parent Wiimote is ignored
     else if (*ptrs->ext == WPAD_EXT_CLASSIC || *ptrs->ext == WPAD_EXT_MPLUS_CLASSIC){
         buttons_pressed = *ptrs->buttons_for.classic;
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_HOME){
-            output = output | UPAD_BUTTON_HOME;
+            output |= UPAD_BUTTON_HOME;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_A){
-            output = output | UPAD_BUTTON_A;
+            output |= UPAD_BUTTON_A;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_B){
-            output = output | UPAD_BUTTON_B;
+            output |= UPAD_BUTTON_B;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_X){
-            output = output | UPAD_BUTTON_X;
+            output |= UPAD_BUTTON_X;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_Y){
-            output = output | UPAD_BUTTON_Y;
+            output |= UPAD_BUTTON_Y;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_PLUS){
-            output = output | UPAD_BUTTON_PLUS;
+            output |= UPAD_BUTTON_PLUS;
         }
         if (buttons_pressed & WPAD_CLASSIC_BUTTON_MINUS){
-            output = output | UPAD_BUTTON_MINUS;
+            output |= UPAD_BUTTON_MINUS;
         }
         if (buttons_pressed & (WPAD_CLASSIC_BUTTON_UP | WPAD_CLASSIC_STICK_L_EMULATION_UP)){
-            output = output | UPAD_BUTTON_UP;
+            output |= UPAD_BUTTON_UP;
         }
         if (buttons_pressed & (WPAD_CLASSIC_BUTTON_DOWN | WPAD_CLASSIC_STICK_L_EMULATION_DOWN)){
-            output = output | UPAD_BUTTON_DOWN;
+            output |= UPAD_BUTTON_DOWN;
         }
         if (buttons_pressed & (WPAD_CLASSIC_BUTTON_LEFT | WPAD_CLASSIC_STICK_L_EMULATION_LEFT)){
-            output = output | UPAD_BUTTON_LEFT;
+            output |= UPAD_BUTTON_LEFT;
         }
         if (buttons_pressed & (WPAD_CLASSIC_BUTTON_RIGHT | WPAD_CLASSIC_STICK_L_EMULATION_RIGHT)){
-            output = output | UPAD_BUTTON_RIGHT;
+            output |= UPAD_BUTTON_RIGHT;
         }
     }
     //Pro controller mappings
     else if (*ptrs->ext == WPAD_EXT_PRO_CONTROLLER){
         buttons_pressed = *ptrs->buttons_for.pro;
         if (buttons_pressed & WPAD_PRO_BUTTON_HOME){
-            output = output | UPAD_BUTTON_HOME;
+            output |= UPAD_BUTTON_HOME;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_A){
-            output = output | UPAD_BUTTON_A;
+            output |= UPAD_BUTTON_A;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_B){
-            output = output | UPAD_BUTTON_B;
+            output |= UPAD_BUTTON_B;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_X){
-            output = output | UPAD_BUTTON_X;
+            output |= UPAD_BUTTON_X;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_Y){
-            output = output | UPAD_BUTTON_Y;
+            output |= UPAD_BUTTON_Y;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_PLUS){
-            output = output | UPAD_BUTTON_PLUS;
+            output |= UPAD_BUTTON_PLUS;
         }
         if (buttons_pressed & WPAD_PRO_BUTTON_MINUS){
-            output = output | UPAD_BUTTON_MINUS;
+            output |= UPAD_BUTTON_MINUS;
         }
         if (buttons_pressed & (WPAD_PRO_BUTTON_UP | WPAD_PRO_STICK_L_EMULATION_UP)){
-            output = output | UPAD_BUTTON_UP;
+            output |= UPAD_BUTTON_UP;
         }
         if (buttons_pressed & (WPAD_PRO_BUTTON_DOWN | WPAD_PRO_STICK_L_EMULATION_DOWN)){
-            output = output | UPAD_BUTTON_DOWN;
+            output |= UPAD_BUTTON_DOWN;
         }
         if (buttons_pressed & (WPAD_PRO_BUTTON_LEFT | WPAD_PRO_STICK_L_EMULATION_LEFT)){
-            output = output | UPAD_BUTTON_LEFT;
+            output |= UPAD_BUTTON_LEFT;
         }
         if (buttons_pressed & (WPAD_PRO_BUTTON_RIGHT | WPAD_PRO_STICK_L_EMULATION_RIGHT)){
-            output = output | UPAD_BUTTON_RIGHT;
+            output |= UPAD_BUTTON_RIGHT;
         }
     }
     return output;
