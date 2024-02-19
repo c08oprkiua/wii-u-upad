@@ -6,6 +6,7 @@ enum UPADError {
     UPAD_READ_SUCCESS,
     //No controllers could be detected
     UPAD_NO_CONTROLLERS,
+    
 };
 
 enum UPADButtons {
@@ -43,7 +44,7 @@ public:
     /**
      * @brief The error(s) encountered by UPAD, if any. 
      * 
-     * Resets if and when read() is called again.
+     * Resets after calling read().
      */
     UPADError error;
     
