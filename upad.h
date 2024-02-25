@@ -1,12 +1,13 @@
 #include <vpad/input.h>
 #include <padscore/kpad.h>
+#include <nn/hpad/hpad.h>
 
 enum UPADError {
     //No problem
-    UPAD_READ_SUCCESS,
+    UPAD_READ_SUCCESS = 0,
     //No controllers could be detected
     UPAD_NO_CONTROLLERS,
-    
+ 
 };
 
 enum UPADButtons {
@@ -38,7 +39,8 @@ class UPAD {
 private:
 
     void VPADtoUPAD(VPADChan chanl);
-    void KPADtoUPAD(KPADChan chanl);    
+    void KPADtoUPAD(KPADChan chanl);
+    void HPADtoUPAD(HPADChan chanl); 
 
 public:
     /**

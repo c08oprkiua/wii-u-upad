@@ -6,7 +6,7 @@ typedef struct button_struct {
 };
 
 //Home, A, B, X, Y, Plus, Minus, Up, Down, Left, Right
-static button_struct vpad_buttons[] = {
+static button_struct vpad_buttons[11] = {
     {VPAD_BUTTON_HOME, UPAD_BUTTON_HOME},
     {VPAD_BUTTON_A, UPAD_BUTTON_A},
     {VPAD_BUTTON_B, UPAD_BUTTON_B},
@@ -34,15 +34,15 @@ static button_struct kpad_base_buttons[9] = {
 };
 
 //X, Y
-static button_struct kpad_standalone_buttons[] = {
-    {WPAD_BUTTON_1, UPAD_BUTTON_X},
-    {WPAD_BUTTON_2, UPAD_BUTTON_Y},
+static button_struct kpad_standalone_buttons[2] = {
+    {WPAD_BUTTON_1, UPAD_BUTTON_Y},
+    {WPAD_BUTTON_2, UPAD_BUTTON_X},
 };
 
 //X, Y, Up, Down, Left, Right
-static button_struct kpad_nun_buttons[] = {
-    {WPAD_NUNCHUK_BUTTON_C, UPAD_BUTTON_X},
-    {WPAD_NUNCHUK_BUTTON_Z, UPAD_BUTTON_Y},
+static button_struct kpad_nun_buttons[6] = {
+    {WPAD_NUNCHUK_BUTTON_C, UPAD_BUTTON_Y},
+    {WPAD_NUNCHUK_BUTTON_Z, UPAD_BUTTON_X},
     {WPAD_NUNCHUK_STICK_EMULATION_UP, UPAD_BUTTON_UP},
     {WPAD_NUNCHUK_STICK_EMULATION_DOWN, UPAD_BUTTON_DOWN},
     {WPAD_NUNCHUK_STICK_EMULATION_LEFT, UPAD_BUTTON_LEFT},
@@ -50,7 +50,7 @@ static button_struct kpad_nun_buttons[] = {
 };
 
 //Home, A, B, X, Y, Plus, Minus, Up, Down, Left, Right
-static button_struct kpad_classic_buttons[] = {
+static button_struct kpad_classic_buttons[11] = {
     {WPAD_CLASSIC_BUTTON_HOME, UPAD_BUTTON_HOME},
     {WPAD_CLASSIC_BUTTON_A, UPAD_BUTTON_A},
     {WPAD_CLASSIC_BUTTON_B, UPAD_BUTTON_B},
@@ -65,7 +65,7 @@ static button_struct kpad_classic_buttons[] = {
 };
 
 //Home, A, B, X, Y, Plus, Minus, Up, Down, Left, Right
-static button_struct kpad_pro_buttons[] = {
+static button_struct kpad_pro_buttons[11] = {
     {WPAD_PRO_BUTTON_HOME, UPAD_BUTTON_HOME},
     {WPAD_PRO_BUTTON_A, UPAD_BUTTON_A},
     {WPAD_PRO_BUTTON_B, UPAD_BUTTON_B},
@@ -79,12 +79,27 @@ static button_struct kpad_pro_buttons[] = {
     {WPAD_PRO_BUTTON_RIGHT | WPAD_PRO_STICK_L_EMULATION_RIGHT, UPAD_BUTTON_RIGHT},
 };
 
+//A, B, X, Y, Start (Plus), Z (Minus), Up, Down, Left, Right
+static button_struct hpad_buttons[10] = {
+    {HPAD_BUTTON_A, UPAD_BUTTON_A},
+    {HPAD_BUTTON_B, UPAD_BUTTON_B},
+    {HPAD_BUTTON_X, UPAD_BUTTON_X},
+    {HPAD_BUTTON_Y, UPAD_BUTTON_Y},
+    {HPAD_BUTTON_START, UPAD_BUTTON_PLUS},
+    {HPAD_TRIGGER_Z, UPAD_BUTTON_MINUS},
+    {HPAD_BUTTON_UP | HPAD_STICK_EMULATION_UP, UPAD_BUTTON_UP},
+    {HPAD_BUTTON_DOWN | HPAD_STICK_EMULATION_DOWN, UPAD_BUTTON_DOWN},
+    {HPAD_BUTTON_LEFT | HPAD_STICK_EMULATION_LEFT, UPAD_BUTTON_LEFT},
+    {HPAD_BUTTON_RIGHT | HPAD_STICK_EMULATION_RIGHT, UPAD_BUTTON_RIGHT},
+};
+
 UPAD::UPAD(){
-    /*
+    
     WPADInit();
     KPADInit();
     VPADInit();
-    */
+    HPADInit();
+    
 };
 
 UPAD::~UPAD(){
@@ -92,24 +107,63 @@ UPAD::~UPAD(){
     KPADShutdown();
     WPADShutdown();
     VPADShutdown();
+    HPADShutdown();
     */
 };
 
 void UPAD::read(){
-    error = UPAD_READ_SUCCESS;
+    error = UPAD_NO_CONTROLLERS;
     trigger &= ~trigger; //Magically sets it to 0 :trollface:
     hold &= ~hold;
     release &= ~release;
+
+    //VPADs
     VPADtoUPAD(VPAD_CHAN_0);
     VPADtoUPAD(VPAD_CHAN_1);
-    uint8_t kpad_iterate = 0;
-    for (kpad_iterate = 0; kpad_iterate < 4; kpad_iterate++){
-        KPADtoUPAD((KPADChan) kpad_iterate);
+
+    //KPADs
+    uint8_t iterate = 0;
+    for (iterate = WPAD_CHAN_0; iterate <= WPAD_CHAN_3; iterate++){
+        KPADtoUPAD((KPADChan) iterate);
     }
+
+    //HPADs (sorry about this obscene looping)
+    iterate = 0;
+    uint8_t max_check = HPAD_CHAN_3;
+    //Outer loop: Check both adapters
+    for (uint8_t g_iter = HPAD_GGGG_CHAN_0; g_iter <= HPAD_GGGG_CHAN_1; g_iter++){
+        HPADGGGGStatus ada_status;
+        HPADGetGGGGStatus((HPADGGGGChan) g_iter, &ada_status);
+        //If the adapter isn't working, skip it
+        if (ada_status.active && ada_status.connected && ada_status.powerSupplyConnected){
+            /*
+            First time over, it starts at 0 stops at 3, iterate maintains its value, 
+            and the second time over, it starts at 4 and stops at 7
+            */
+            for (iterate; iterate <= max_check; iterate++){
+                HPADtoUPAD((HPADChan) iterate);
+            }
+        }
+        iterate += 1;
+        max_check += 4;
+    }
+    
     //Check to see if literally any input has been read
     if (!(trigger || hold || release)){
         error = UPAD_NO_CONTROLLERS;
     }
+    else {
+        error = UPAD_READ_SUCCESS;
+    }
+}
+
+void UPAD::HPADtoUPAD(HPADChan chanl){
+    HPADStatus h_status[0x10];
+    HPADRead(chanl, h_status, 0x10);
+
+    trigger |= internal_read(h_status[0].trigger, hpad_buttons, 11);
+    hold |= internal_read(h_status[0].hold, hpad_buttons, 11);
+    release |= internal_read(h_status[0].release, hpad_buttons, 11);
 }
 
 void UPAD::VPADtoUPAD(VPADChan chanl){
@@ -127,12 +181,9 @@ void UPAD::VPADtoUPAD(VPADChan chanl){
 
 void UPAD::KPADtoUPAD(KPADChan chanl){
     KPADStatus wiimote;
-    KPADError err;
-    KPADReadEx(chanl, &wiimote, 1, &err);
-    //Insert error check here
+    KPADRead(chanl, &wiimote, 1);
 
-    switch (wiimote.extensionType)
-    {
+    switch (wiimote.extensionType){
     case WPAD_EXT_CORE:
     case WPAD_EXT_MPLUS:
     case WPAD_EXT_NUNCHUK:
@@ -171,12 +222,11 @@ void UPAD::KPADtoUPAD(KPADChan chanl){
         break;
 
     default:
-        error = UPAD_NO_CONTROLLERS;
         break;
     }
 }
 
-uint32_t internal_read(uint32_t &in_buttons, button_struct *button_chart, uint8_t chart_size_plus_1){
+uint32_t internal_read(uint32_t in_buttons, button_struct *button_chart, uint8_t chart_size_plus_1){
     uint32_t output;
     uint8_t iter;
     button_struct current;
