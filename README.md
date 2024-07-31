@@ -8,7 +8,7 @@ Usage is reminiscent of KPAD or VPAD, but now you instantiate UPAD as an class o
 ## Usage notes: 
 * As it is currently programmed, this will merge all inputs into a single output, meaning (for example) one controller pressing up and another pressing down will return both up *and* down from UPAD.
 * Input support is limited to the standard ABXY face buttons, home, the d-pad, (-), and (+); just enough for GUI navigation.
-* This also implements the recently added HPAD headers in WUT for GameCube controller support, added as of [this commit](https://github.com/devkitPro/wut/commit/fe45347516bdf068cec97d380ea5fe9a98d10193). As of the time of writing this (2/25/24), this will require manually (re)installing WUT.
+* This library is not tested since I haven't bothered making a test app for it. So, as-is warranty stuff (it's in the license)
 
 # Button mappings
 
